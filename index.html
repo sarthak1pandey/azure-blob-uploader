@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>3-Tier Azure Web App</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f6f8;
+      color: #333;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      color: #0078d4;
+      margin-bottom: 10px;
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 40px;
+    }
+
+    .api-output {
+      background-color: #ffffff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      width: 80%;
+      max-width: 600px;
+      margin: 0 auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      text-align: left;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      margin-top: 60px;
+      font-size: 0.9rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to My Azure Web App</h1>
+  <p>This is the frontend of a 3-tier architecture project, hosted using Azure Static Web Apps.</p>
+
+  <div id="output" class="api-output">Waiting for backend response...</div>
+
+  <footer>
+    © 2025 | Built as part of an Azure Internship Project
+  </footer>
+
+  <script>
+    fetch("https://<BACKEND-API-URL>/hello")
+      .then((res) => res.json())
+      .then((data) => {
+        document.getElementById("output").textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        console.error("API not connected yet");
+        document.getElementById("output").textContent = "⚠️ Could not connect to backend.";
+      });
+  </script>
+</body>
+</html>
