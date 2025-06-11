@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Azure Blob Uploader</title>
+  <title>Azure Blob Image Uploader</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -10,23 +10,31 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 40px 20px;
       margin: 0;
+      padding: 0;
+      min-height: 100vh;
     }
 
-    h1 {
-      color: #0078D4;
-      margin-bottom: 10px;
+    header {
+      background-color: #0078D4;
+      color: white;
+      width: 100%;
+      padding: 20px 0;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
     .container {
       background: white;
+      margin-top: 40px;
       padding: 30px 40px;
       border-radius: 10px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
       text-align: center;
       max-width: 500px;
-      width: 100%;
+      width: 90%;
     }
 
     h2 {
@@ -38,21 +46,28 @@
       display: none;
     }
 
-    .upload-area {
+    label {
+      display: inline-block;
+      margin: 10px 0;
+      background-color: #0078D4;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .drop-zone {
       border: 2px dashed #0078D4;
       border-radius: 10px;
       padding: 30px;
-      background-color: #f0f8ff;
+      margin-top: 20px;
       cursor: pointer;
-      transition: background 0.3s ease;
+      color: #555;
     }
 
-    .upload-area:hover {
-      background-color: #e6f1fb;
-    }
-
-    .upload-area.dragover {
-      background-color: #d6eaff;
+    .drop-zone.dragover {
+      background-color: #f0f8ff;
+      border-color: #005a9e;
     }
 
     button {
@@ -76,28 +91,21 @@
       font-weight: 500;
     }
 
-    .success {
-      color: green;
-    }
-
-    .error {
-      color: red;
-    }
-
-    .loading {
-      color: #555;
-    }
+    .success { color: green; }
+    .error { color: red; }
+    .loading { color: #555; }
   </style>
 </head>
 <body>
-  <h1>📦 Azure Blob Image Uploader</h1>
-  <div class="container">
-    <h2>Upload by File Picker or Drag & Drop</h2>
+  <header>🌩️ Azure Blob Image Uploader</header>
 
-    <label class="upload-area" id="uploadArea">
-      <p>Drag & Drop your image here<br><small>or click to select</small></p>
-      <input type="file" id="fileInput" accept="image/*" />
-    </label>
+  <div class="container">
+    <h2>Upload an Image</h2>
+
+    <label for="fileInput">Choose an Image</label>
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <div class="drop-zone" id="dropZone">or drag & drop image here</div>
 
     <button onclick="uploadFile()">Upload</button>
     <div id="status"></div>
@@ -105,38 +113,38 @@
 
   <script>
     const fileInput = document.getElementById("fileInput");
-    const uploadArea = document.getElementById("uploadArea");
+    const dropZone = document.getElementById("dropZone");
     const status = document.getElementById("status");
+
     let selectedFile = null;
 
-    // Drag & drop events
-    uploadArea.addEventListener("dragover", (e) => {
+    // Drag-and-drop events
+    dropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
-      uploadArea.classList.add("dragover");
+      dropZone.classList.add("dragover");
     });
 
-    uploadArea.addEventListener("dragleave", () => {
-      uploadArea.classList.remove("dragover");
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragover");
     });
 
-    uploadArea.addEventListener("drop", (e) => {
+    dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
-      uploadArea.classList.remove("dragover");
-      fileInput.files = e.dataTransfer.files;
-      selectedFile = fileInput.files[0];
-    });
-
-    uploadArea.addEventListener("click", () => {
-      fileInput.click();
+      dropZone.classList.remove("dragover");
+      selectedFile = e.dataTransfer.files[0];
+      status.textContent = `Selected: ${selectedFile.name}`;
+      status.className = "loading";
     });
 
     fileInput.addEventListener("change", () => {
       selectedFile = fileInput.files[0];
+      status.textContent = `Selected: ${selectedFile.name}`;
+      status.className = "loading";
     });
 
     async function uploadFile() {
       if (!selectedFile) {
-        alert("Please select or drop an image first.");
+        alert("Please select a file first.");
         return;
       }
 
@@ -157,8 +165,11 @@
         });
 
         if (res.ok) {
-          status.textContent = "✅ Upload successful!";
+          navigator.clipboard.writeText(blobUrl);
+          status.textContent = "✅ Upload successful! URL copied to clipboard.";
           status.className = "success";
+          selectedFile = null;
+          fileInput.value = "";
         } else {
           status.textContent = "❌ Upload failed. Please try again.";
           status.className = "error";
