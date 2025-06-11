@@ -2,68 +2,184 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3-Tier Azure Web App</title>
+  <title>Azure Blob Image Uploader</title>
   <style>
     body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f6f8;
-      color: #333;
-      padding: 40px;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #0078D4;
+      color: white;
+      width: 100%;
+      padding: 20px 0;
       text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    h1 {
-      color: #0078d4;
-      margin-bottom: 10px;
+    .container {
+      background: white;
+      margin-top: 40px;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
     }
 
-    p {
-      font-size: 1.1rem;
-      margin-bottom: 40px;
+    h2 {
+      margin-bottom: 20px;
+      color: #333;
     }
 
-    .api-output {
-      background-color: #ffffff;
-      border: 1px solid #ddd;
-      padding: 20px;
-      width: 80%;
-      max-width: 600px;
-      margin: 0 auto;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      text-align: left;
-      white-space: pre-wrap;
+    input[type="file"] {
+      display: none;
     }
 
-    footer {
-      margin-top: 60px;
-      font-size: 0.9rem;
-      color: #777;
+    label {
+      display: inline-block;
+      margin: 10px 0;
+      background-color: #0078D4;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
     }
+
+    .drop-zone {
+      border: 2px dashed #0078D4;
+      border-radius: 10px;
+      padding: 30px;
+      margin-top: 20px;
+      cursor: pointer;
+      color: #555;
+    }
+
+    .drop-zone.dragover {
+      background-color: #f0f8ff;
+      border-color: #005a9e;
+    }
+
+    button {
+      background-color: #0078D4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #005a9e;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-weight: 500;
+    }
+
+    .success { color: green; }
+    .error { color: red; }
+    .loading { color: #555; }
   </style>
 </head>
 <body>
-  <h1>Welcome to My Azure Web App</h1>
-  <p>This is the frontend of a 3-tier architecture project, hosted using Azure Static Web Apps.</p>
+  <header>🌩️ Azure Blob Image Uploader</header>
 
-  <div id="output" class="api-output">Waiting for backend response...</div>
+  <div class="container">
+    <h2>Upload an Image</h2>
 
-  <footer>
-    © 2025 | Built as part of an Azure Internship Project
-  </footer>
+    <label for="fileInput">Choose an Image</label>
+    <input type="file" id="fileInput" accept="image/*" />
+
+    <div class="drop-zone" id="dropZone">or drag & drop image here</div>
+
+    <button onclick="uploadFile()">Upload</button>
+    <div id="status"></div>
+  </div>
 
   <script>
-    fetch("https://<BACKEND-API-URL>/hello")
-      .then((res) => res.json())
-      .then((data) => {
-        document.getElementById("output").textContent = JSON.stringify(data, null, 2);
-      })
-      .catch(err => {
-        console.error("API not connected yet");
-        document.getElementById("output").textContent = "⚠️ Could not connect to backend.";
-      });
+    const fileInput = document.getElementById("fileInput");
+    const dropZone = document.getElementById("dropZone");
+    const status = document.getElementById("status");
+
+    let selectedFile = null;
+
+    // Drag-and-drop events
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+      dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("dragover");
+      selectedFile = e.dataTransfer.files[0];
+      status.textContent = `Selected: ${selectedFile.name}`;
+      status.className = "loading";
+    });
+
+    fileInput.addEventListener("change", () => {
+      selectedFile = fileInput.files[0];
+      status.textContent = `Selected: ${selectedFile.name}`;
+      status.className = "loading";
+    });
+
+    async function uploadFile() {
+      if (!selectedFile) {
+        alert("Please select a file first.");
+        return;
+      }
+
+      const sasUrl = "https://sarthakblobuploader.blob.core.windows.net/images?sp=rcw&st=2025-06-11T05:42:42Z&se=2025-06-11T07:42:42Z&spr=https&sv=2024-11-04&sr=c&sig=mwT6sSlFo9RSzDu7L%2BKe2rfKf9yVgUQvRp%2BfuOeuzcE%3D";
+      const blobUrl = `${sasUrl.split("?")[0]}/${selectedFile.name}?${sasUrl.split("?")[1]}`;
+
+      status.textContent = "⏳ Uploading...";
+      status.className = "loading";
+
+      try {
+        const res = await fetch(blobUrl, {
+          method: "PUT",
+          headers: {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": selectedFile.type,
+          },
+          body: selectedFile,
+        });
+
+        if (res.ok) {
+          navigator.clipboard.writeText(blobUrl);
+          status.textContent = "✅ Upload successful! URL copied to clipboard.";
+          status.className = "success";
+          selectedFile = null;
+          fileInput.value = "";
+        } else {
+          status.textContent = "❌ Upload failed. Please try again.";
+          status.className = "error";
+        }
+      } catch (err) {
+        console.error(err);
+        status.textContent = "⚠️ Network error. Check console.";
+        status.className = "error";
+      }
+    }
   </script>
 </body>
 </html>
